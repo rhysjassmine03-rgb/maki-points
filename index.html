@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MAKI - 會議積分統計系統</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- 背景動畫裝飾 -->
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
+
+    <!-- 頂部導覽列 -->
+    <header class="glass-header">
+        <div class="header-content">
+            <h1 class="logo" id="nav-logo" style="cursor: pointer;">
+                <i class="fa-solid fa-bolt text-glow"></i> MAKI <span class="subtitle">會議積分系統</span>
+            </h1>
+            <div class="nav-actions">
+                <div id="connection-status" class="status-badge connecting">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i> 連線中
+                </div>
+                <button id="btn-admin-login" class="btn-icon-txt">
+                    <i class="fa-solid fa-lock"></i> 管理員登入
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main id="app" class="container">
+        
+        <!-- 頁面 1：首頁 (選擇功能入口) -->
+        <section id="view-home" class="view-section active glass-panel fade-in">
+            <div class="home-hero-v2">
+                <h2>📊 會議積分管理系統</h2>
+                <p>請點選您要執行的功能：</p>
+                <button class="btn-txt" onclick="ui.manuallyChangeUrl()" style="margin-top: 10px; color: #3b82f6; cursor: pointer; text-decoration: underline;">
+                    <i class="fa-solid fa-gears"></i> 一直連不上？點我手動更新或還原 API 網址
+                </button>
+            </div>
+            
+            <div class="action-cards">
+                <div class="action-card" onclick="app.navigate('create')">
+                    <div class="card-icon gradient-1"><i class="fa-solid fa-file-signature"></i></div>
+                    <h3>會議紀錄</h3>
+                    <p>開啟一場新會議，記錄團隊發問與回答的積分。</p>
+                </div>
+                
+                <div class="action-card" onclick="ui.showPersonalStats()">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #58a6ff, #005cc5); color: #fff;"><i class="fa-solid fa-user-check"></i></div>
+                    <h3>個人積分查詢</h3>
+                    <p>查看自己的搶答、發問與回答次數統計。</p>
+                </div>
+                
+                <div class="action-card" onclick="app.navigateCheckAdmin('stats')">
+                    <div class="card-icon gradient-2"><i class="fa-solid fa-chart-line"></i></div>
+                    <h3>查看歷史紀錄</h3>
+                    <p>檢視排行、每人發言次數與歷史紀錄。</p>
+                    <span class="admin-only-tag">限管理者使用</span>
+                </div>
+
+                <div class="action-card" onclick="app.navigateCheckAdmin('exchange')">
+                    <div class="card-icon gradient-3"><i class="fa-solid fa-gift"></i></div>
+                    <h3>積分兌換獎項</h3>
+                    <p>使用累積積分兌換各種超值獎勵與福利。</p>
+                    <span class="admin-only-tag">限管理者使用</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 頁面 2：建立會議表單 -->
+        <section id="view-create" class="view-section glass-panel fade-in" style="display: none;">
+            <div class="section-header">
+                <button class="btn-back btn-txt" onclick="app.navigate('home')">
+                    <i class="fa-solid fa-angle-left"></i> 返回
+                </button>
+                <h2>新增會議基本資料</h2>
+            </div>
+            
+            <form id="form-create-meeting" class="form-container">
+                <div class="form-group">
+                    <label for="input-meeting-title"><i class="fa-solid fa-signature"></i> 會議名稱</label>
+                    <input type="text" id="input-meeting-title" placeholder="例如：Q1 產品規劃會議" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="input-meeting-date"><i class="fa-regular fa-calendar"></i> 會議日期</label>
+                    <input type="date" id="input-meeting-date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="input-meeting-topic"><i class="fa-solid fa-bullseye"></i> 會議主題</label>
+                    <input type="text" id="input-meeting-topic" placeholder="例如：討論新功能優先級" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="select-recorder"><i class="fa-solid fa-pen-nib"></i> 填表人 (記錄者)</label>
+                    <select id="select-recorder" required>
+                        <option value="" disabled selected>載入中...</option>
+                    </select>
+                </div>
+                <!-- 參與人員 -->
+                <div class="form-group glass-panel">
+                    <div class="group-header">
+                        <label><i class="fa-solid fa-users"></i> 參與人員 (可複選)</label>
+                    </div>
+                    <!-- 部門分選按鈕 -->
+                    <div class="dept-selector" id="dept-selector">
+                        <button type="button" id="btn-select-all" class="btn-dept primary">全選</button>
+                        <button type="button" class="btn-dept" data-dept="PRO">PRO</button>
+                        <button type="button" class="btn-dept" data-dept="SAL">SAL</button>
+                        <button type="button" class="btn-dept" data-dept="OPE">OPE</button>
+                        <button type="button" class="btn-dept" data-dept="MAR">MAR</button>
+                    </div>
+                    <div id="participant-list" class="participant-grid">
+                        <div class="loading-text">載入中...</div>
+                    </div>
+                    <div id="debug-output" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 10px;"></div>
+                </div>
+
+                <button type="submit" class="btn-primary btn-large w-100">
+                    <i class="fa-solid fa-play"></i> 開始會議記分
+                </button>
+            </form>
+        </section>
+
+        <!-- 頁面 3：進行中會議記分面板 -->
+        <section id="view-recording" class="view-section" style="display: none;">
+            <div class="recording-header glass-panel fade-in">
+                <div class="recording-info">
+                    <div class="status-live"><div class="pulse-dot"></div> 記分進行中</div>
+                    <h2 id="live-meeting-title">會議名稱</h2>
+                    <p class="live-meta">
+                        <i class="fa-regular fa-calendar"></i> <span id="live-meeting-date"></span> | 
+                        <i class="fa-solid fa-pen"></i> <span id="live-meeting-recorder"></span>
+                    </p>
+                </div>
+                <button id="btn-save-meeting" class="btn-success btn-large">
+                    <i class="fa-solid fa-check"></i> 儲存會議結果
+                </button>
+            </div>
+
+            <div class="participants-grid" id="live-participants-grid">
+                <!-- JS 動態生成參與者記分卡 -->
+            </div>
+
+            <!-- V5.19：積分明細表格 (存檔前確認) -->
+            <div class="glass-panel mt-4 fade-in" id="recording-detail-wrapper" style="display: none; background: rgba(0,0,0,0.2);">
+                <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--accent-1);"><i class="fa-solid fa-list-check"></i> 參與人員積分明細 (存檔前核對)</h3>
+                <div class="table-responsive">
+                    <table class="history-table" id="recording-detail-table" style="font-size: 0.85rem;">
+                        <thead>
+                            <tr>
+                                <th>姓名</th>
+                                <th>總分</th>
+                                <th>快問</th>
+                                <th>一般發問</th>
+                                <th>回答</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- V5.18：會議實時統計摘要 -->
+            <div class="recording-summary glass-panel mt-4 fade-in" id="recording-summary" style="display: none; border-color: var(--accent-1);">
+                <div style="display: flex; justify-content: space-around; text-align: center;">
+                    <div><div style="font-size: 0.8rem; color: var(--text-secondary);">總發言</div><div id="summary-total-ask" style="font-size: 1.5rem; font-weight: bold; color: var(--accent-1);">0</div></div>
+                    <div><div style="font-size: 0.8rem; color: var(--text-secondary);">總回答</div><div id="summary-total-reply" style="font-size: 1.5rem; font-weight: bold; color: var(--accent-success);">0</div></div>
+                    <div><div style="font-size: 0.8rem; color: var(--text-secondary);">目前總積分</div><div id="summary-total-score" style="font-size: 1.5rem; font-weight: bold; color: var(--accent-warning);">0</div></div>
+                </div>
+            </div>
+
+            <button onclick="ui.finishMeeting()" class="btn-success btn-large w-100 mt-4" style="box-shadow: 0 0 20px rgba(35, 134, 54, 0.4);">
+                <i class="fa-solid fa-cloud-arrow-up"></i> 儲存本次會議結果
+            </button>
+        </section>    
+            <!-- 參與者卡片模板 (隱藏) -->
+            <template id="tpl-participant-card">
+                <div class="participant-card glass-panel fade-in">
+                    <div class="p-header">
+                        <div class="p-avatar"><i class="fa-solid fa-user"></i></div>
+                        <h3 class="p-name">{name}</h3>
+                        <div class="p-score text-glow">{score} <span class="unit">分</span></div>
+                    </div>
+                    <div class="p-stats">
+                        <div class="stat-badge">⚡ 快問: <span class="stat-fac">0</span></div>
+                        <div class="stat-badge">🎙️ 一般發問: <span class="stat-ac">0</span></div>
+                        <div class="stat-badge"><i class="fa-solid fa-reply"></i> 回答: <span class="stat-reply">0</span></div>
+                    </div>
+                    <div class="p-actions">
+                        <button class="btn-action btn-ask-first" data-action="ask_first" data-points="30">
+                            快問 <span class="points">+30</span>
+                        </button>
+                        <div class="action-row">
+                            <button class="btn-action btn-ask" data-action="ask" data-points="10">
+                                一般發問 <span class="points">+10</span>
+                            </button>
+                            <button class="btn-action btn-reply" data-action="reply" data-points="3">
+                                回答 <span class="points">+3</span>
+                            </button>
+                        </div>
+                        <!-- V5.19：變更為清除重置按鈕 -->
+                        <div style="margin-top: 5px;">
+                            <button class="btn-reset w-100" style="background: rgba(248, 81, 73, 0.1); border: 1px solid rgba(248, 81, 73, 0.2); color: #f85149; padding: 5px; border-radius: 5px; font-size: 0.75rem; cursor: pointer;">
+                                <i class="fa-solid fa-rotate-left"></i> 清除本次記分
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </section>
+
+        <!-- 頁面 4：統計與報表 -->
+        <section id="view-stats" class="view-section fade-in" style="display: none;">
+            <div class="section-header">
+                <button class="btn-back btn-txt" onclick="app.navigate('home')">
+                    <i class="fa-solid fa-angle-left"></i> 返回
+                </button>
+                <h2>歷史統計與部門排名</h2>
+            </div>
+            
+            <div class="stats-filter-bar glass-panel mb-4">
+                <div class="filter-group">
+                    <label>查詢區間：</label>
+                    <input type="date" id="stats-date-start">
+                    <span>至</span>
+                    <input type="date" id="stats-date-end">
+                    <button id="btn-filter-stats" class="btn-primary btn-sm">套用篩選</button>
+                </div>
+            </div>
+            
+            <div class="stats-dashboard">
+                <div class="stats-sidebar">
+                    <div class="glass-panel summary-card">
+                        <h3 id="stat-rank-title"><i class="fa-solid fa-trophy text-glow-gold"></i> 個人積分排行</h3>
+                        <ul class="leaderboard-list" id="leaderboard-list">
+                            <!-- JS 生成 -->
+                            <div class="loading-text">資料載入中...</div>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="stats-main">
+                    <div class="glass-panel chart-container">
+                        <h3><i class="fa-solid fa-chart-pie"></i> 部門積分排名分析</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="ratioChart"></canvas>
+                        </div>
+                        <!-- V5.19 Rev.J：部門排名摘要表格 -->
+                        <div id="dept-table-wrapper" class="mt-4"></div>
+                    </div>
+
+                    <!-- V5.18：個人積分分析面板 -->
+                    <div class="glass-panel mt-4 fade-in" id="personal-analysis-panel">
+                        <h3><i class="fa-solid fa-bolt-lightning text-glow"></i> 個人亮點分析 (各項之最)</h3>
+                        <div class="insights-grid" id="personal-insights-content">
+                            <!-- JS 生成 -->
+                            <div class="loading-text">計算中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel mt-4">
+                <div class="section-header-row">
+                    <h3><i class="fa-solid fa-list-check"></i> 歷史會議紀錄</h3>
+                    <div class="header-actions" style="display:flex; gap:10px;">
+                        <button class="btn-outline btn-sm" id="btn-refresh-history" title="重新整理資料">
+                            <i class="fa-solid fa-rotate"></i> 重新整理
+                        </button>
+                        <button class="btn-outline btn-sm" id="btn-export-csv" onclick="ui.exportCSV()">
+                            <i class="fa-solid fa-file-csv"></i> 匯出報表
+                        </button>
+                        <button class="btn-danger btn-sm admin-only" id="btn-bulk-delete-meetings" style="display:none">
+                            <i class="fa-solid fa-trash-can"></i> 批次刪除
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="history-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;" class="admin-only"><input type="checkbox" id="chk-history-all"></th>
+                                <th>日期</th>
+                                <th>會議名稱</th>
+                                <th>填表人</th>
+                                <th>參與人數</th>
+                                <th>最高分得主</th>
+                                <th class="admin-only">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- JS 生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 頁面 5：積分兌換 -->
+        <section id="view-exchange" class="view-section fade-in" style="display: none;">
+            <div class="section-header glass-panel">
+                <button class="btn-back btn-txt" onclick="app.navigate('home')">
+                    <i class="fa-solid fa-angle-left"></i> 返回
+                </button>
+                <h2>積分兌換獎品</h2>
+            </div>
+
+            <div class="exchange-container">
+                <div class="glass-panel balance-card">
+                    <h3>您的當前可用積分</h3>
+                    <div class="balance-picker">
+                        <select id="exchange-user-select">
+                            <option value="">請先選擇您的姓名</option>
+                        </select>
+                        <div class="current-balance" id="display-user-points">-- 分</div>
+                    </div>
+                </div>
+                
+                <div class="prize-grid" id="prize-list">
+                    <!-- JS 生成獎項 -->
+                </div>
+            </div>
+
+            <!-- V5：近期兌換紀錄表格 -->
+            <div class="glass-panel mt-4 fade-in">
+                <div class="section-header-row">
+                    <h3><i class="fa-solid fa-clock-rotate-left"></i> 近期兌換紀錄</h3>
+                    <div class="search-box">
+                        <input type="text" id="search-redemption" placeholder="搜尋姓名或品項...">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="redemption-table">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>同仁</th>
+                                <th>兌換品項</th>
+                                <th>耗費積分</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="redemption-history-body">
+                            <!-- JS 生成 -->
+                            <tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-secondary);">載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- V5.19：個人積分查詢頁面 -->
+        <section id="view-personal-stats" class="view-section" style="display: none;">
+            <div class="glass-panel fade-in">
+                <div class="section-header" style="justify-content: space-between;">
+                    <h2><i class="fa-solid fa-user-magnifying-glass"></i> 個人積分查詢</h2>
+                    <button onclick="app.navigate('home')" class="btn-ghost">返回主頁</button>
+                </div>
+                <div class="filter-bar no-print" style="margin-bottom: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">
+                    <label style="display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-secondary);">請選擇您的姓名：</label>
+                    <select id="personal-user-select" class="form-input" style="max-width: 100%; width: 100%;" onchange="ui.renderPersonalDetailStats()">
+                        <option value="">-- 請選擇同仁 --</option>
+                    </select>
+                </div>
+                <div id="personal-stats-result" style="display: none;">
+                    <!-- 由 JS 生成結果 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- V5.19：歷史會議明細與編輯頁面 -->
+        <section id="view-meeting-detail" class="view-section" style="display: none;">
+            <div class="glass-panel fade-in">
+                <div class="section-header" style="justify-content: space-between; margin-bottom: 15px; align-items: flex-start;">
+                    <div>
+                        <h2 id="detail-meeting-title" style="margin-bottom: 5px;">會議詳情</h2>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                            <i class="fa-regular fa-calendar"></i> <span id="detail-meeting-date"></span> | 
+                            <i class="fa-solid fa-user-pen"></i> <span id="detail-meeting-recorder"></span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btn-edit-meeting" class="btn-primary" onclick="ui.toggleDetailEditMode(true)">
+                            <i class="fa-solid fa-pen-to-square"></i> 編輯紀錄
+                        </button>
+                        <button id="btn-save-meeting-changes" class="btn-success" style="display: none;" onclick="ui.saveMeetingChanges()">
+                            <i class="fa-solid fa-floppy-disk"></i> 儲存更改
+                        </button>
+                        <button onclick="app.navigate('stats')" class="btn-ghost">關閉</button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="history-table" id="meeting-detail-table">
+                        <thead>
+                            <tr>
+                                <th>姓名</th>
+                                <th>總積分</th>
+                                <th>快問</th>
+                                <th>一般發問</th>
+                                <th>回答</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 管理員登入 Modal -->
+    <div id="modal-admin" class="modal-overlay">
+        <div class="modal-content glass-panel fade-in">
+            <h3><i class="fa-solid fa-shield-halved"></i> 管理員身分驗證</h3>
+            <p>請輸入管理員專屬密碼以啟用管理權限：</p>
+            <input type="password" id="admin-password" placeholder="請輸入密碼">
+            <div class="modal-actions">
+                <button id="btn-cancel-login" class="btn-txt">取消</button>
+                <button id="btn-do-login" class="btn-primary">確認登入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 設定 Modal -->
+    <div id="modal-settings" class="modal-overlay">
+        <div class="modal-content glass-panel">
+            <h3><i class="fa-solid fa-lock"></i> 管理員驗證</h3>
+            <div class="form-group">
+                <label>請輸入管理密碼</label>
+                <input type="password" id="admin-password-settings" placeholder="預設 8888">
+            </div>
+            
+            <hr class="modal-hr">
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 5px;">🔧 開發者偵錯與 API 設定</p>
+            <div class="form-group">
+                <input type="text" id="config-api-url" placeholder="手動貼入 GAS API URL (若連線失敗)">
+                <button type="button" class="btn-primary btn-sm w-100" id="btn-save-config" style="margin-top:5px;">更新 API 路徑</button>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-secondary" id="btn-cancel-settings">取消</button>
+                <button class="btn-primary" id="btn-do-admin-auth-settings">確認</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 診斷訊息 Modal (在 API 錯誤時彈出) -->
+    <div id="modal-debug" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width: 90%; width: 500px;">
+            <h3>⚠️ 資料載入診斷</h3>
+            <div id="debug-content" style="background:#000; color:#58a6ff; padding:10px; font-family:monospace; font-size:0.8rem; border-radius:5px; height: 300px; overflow-y:auto; margin-bottom:15px;">
+                正在蒐集診斷資訊...
+            </div>
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="document.getElementById('modal-debug').classList.remove('active')">關閉</button>
+                <button class="btn-secondary" onclick="location.reload()">重新整頁</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- V5.3：連線診斷 Modal -->
+    <div id="modal-connection-help" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 450px;">
+            <h3 class="text-glow"><i class="fa-solid fa-signal"></i> 連線診斷工具</h3>
+            <p style="margin-bottom: 15px; font-size: 0.9em; opacity: 0.9;">系統偵測到連線時間較長，請確認您的後端 API 設定：</p>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>目前的 GAS API URL：</label>
+                <div id="diag-current-url" style="word-break: break-all; font-family: monospace; font-size: 0.75em; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px;"></div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn-primary" onclick="ui.manuallyChangeUrl()">
+                    <i class="fa-solid fa-edit"></i> 手動重新設定網址
+                </button>
+                <button class="btn-outline" onclick="location.reload()">
+                    <i class="fa-solid fa-rotate"></i> 重新整理網頁
+                </button>
+                <button class="btn-txt" onclick="ui.hideConnectionHelp()" style="margin-top: 10px;">
+                    暫時關閉
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS 模組載入 -->
+    <script type="module" src="js/app_v2.js?v=5.19"></script>
+</body>
+</html>
