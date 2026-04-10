@@ -756,6 +756,20 @@ input:focus, select:focus {
 }
 .prize-card:hover { transform: translateY(-5px); border-color: var(--accent-1); }
 .prize-icon { font-size: 2rem; margin-bottom: 15px; display: block; }
+.prize-en-name {
+    font-size: 0.75rem;
+    color: var(--accent-1);
+    margin-bottom: 5px;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.prize-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
 .prize-points {
     display: block;
     font-weight: bold;

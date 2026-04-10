@@ -9,11 +9,11 @@ class UI {
         this.currentRecords = {};
         this.POINTS = { ASK_FIRST: 30, ASK: 10, REPLY: 3 };
         this.PRIZES = [
-            { id: 'p1', name: '大杯星巴克', points: 300, icon: '☕' },
-            { id: 'p2', name: '舒壓按摩券', points: 500, icon: '💆' },
-            { id: 'p3', name: '提早一小時下班', points: 800, icon: '🏃' },
-            { id: 'p4', name: '免費午餐一份', points: 400, icon: '🍱' },
-            { id: 'p5', name: '特別獎金 $500', points: 1500, icon: '💰' }
+            { id: 'p1', name: '星巴克VIP候機室', enName: 'Starbucks VIP Lounge', desc: '(飲料券 $170 Beverae Voucher $170)', points: 120, icon: '☕' },
+            { id: 'p2', name: '任意門轉機時光', enName: 'Express Transit Time', desc: '(提早下班一小時公假  Leave 1-Hour early)', points: 300, icon: '🏃' },
+            { id: 'p3', name: '威秀機上娛樂系統', enName: 'Vieshow In-Flight Ent.', desc: '(電影票+餐飲兌換券 Movie+F&B)', points: 370, icon: '🎬' },
+            { id: 'p4', name: '陶板屋米其林機上餐', enName: 'Tokiya Premium Meal', desc: '(套餐券 Set Meal Voucher)', points: 650, icon: '🍱' },
+            { id: 'p5', name: '澤也東方頭等艙尊榮SPA', enName: 'Zeyan First-Class SPA', desc: '(50min SPA)', points: 750, icon: '💆' }
         ];
     }
 
@@ -263,7 +263,14 @@ class UI {
         this.PRIZES.forEach(p => {
             const card = document.createElement('div');
             card.className = 'prize-card glass-panel fade-in';
-            card.innerHTML = `<span class="prize-icon">${p.icon}</span><h4>${p.name}</h4><span class="prize-points">${p.points} 分</span><button class="btn-primary btn-sm w-100" onclick="ui.handleExchange('${p.id}')">立即兌換</button>`;
+            card.innerHTML = `
+                <span class="prize-icon">${p.icon}</span>
+                <h4>${p.name}</h4>
+                <div class="prize-en-name">${p.enName}</div>
+                <div class="prize-desc">${p.desc}</div>
+                <span class="prize-points">${p.points} 分</span>
+                <button class="btn-primary btn-sm w-100" onclick="ui.handleExchange('${p.id}')">立即兌換</button>
+            `;
             prizeList.appendChild(card);
         });
         this.renderRedemptionTable();
