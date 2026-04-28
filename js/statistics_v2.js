@@ -130,7 +130,7 @@ function renderLeaderboard(userList) {
         return;
     }
 
-    sorted.slice(0, 15).forEach((u, index) => {
+    sorted.forEach((u, index) => {
         const li = document.createElement('li');
         li.className = 'leaderboard-item fade-in';
         let rankClass = index < 3 ? `rank-${index + 1}` : ''; 
