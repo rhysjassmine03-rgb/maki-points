@@ -109,6 +109,14 @@ export function renderStatistics(data, startDate = null, endDate = null) {
             else deptStats['OTHER'] += u.score;
         });
 
+        // 排除人數為 0 的部門，不顯示在圖表與表格上
+        Object.keys(deptStats).forEach(d => {
+            if (deptHeadcount[d] === 0) {
+                delete deptStats[d];
+                delete deptHeadcount[d];
+            }
+        });
+
         renderLeaderboard(Object.values(userStats));
         renderDeptChart(deptStats);
         renderDeptTable(deptStats, deptHeadcount); // V5.19 Rev.J
