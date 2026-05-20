@@ -31,9 +31,9 @@ export function renderStatistics(data, startDate = null, endDate = null) {
 
         const userStats = {};
         const nameToId = {}; 
-        // V5.19 Rev.J：將「其他」改為「MGR」，並新增「MANAGER」
-        const deptStats = { 'PRO': 0, 'SAL': 0, 'OPE': 0, 'MAR': 0, 'ADM': 0, 'MGR': 0, 'MANAGER': 0 };
-        const deptHeadcount = { 'PRO': 0, 'SAL': 0, 'OPE': 0, 'MAR': 0, 'ADM': 0, 'MGR': 0, 'MANAGER': 0 };
+        // V5.19 Rev.K：將原先充當「其他」的 MGR 更名為 OTHER，以避免與 MANAGER 混淆，並統一將 MGR 與 MANAGER 合併
+        const deptStats = { 'PRO': 0, 'SAL': 0, 'OPE': 0, 'MAR': 0, 'ADM': 0, 'MANAGER': 0, 'OTHER': 0 };
+        const deptHeadcount = { 'PRO': 0, 'SAL': 0, 'OPE': 0, 'MAR': 0, 'ADM': 0, 'MANAGER': 0, 'OTHER': 0 };
         
         // 個人亮點分析用資料 (V5.18)
         const analysisData = {
@@ -46,17 +46,20 @@ export function renderStatistics(data, startDate = null, endDate = null) {
             const uid = (u.id || u.userId || '').toString().trim();
             const uname = u.name || u.userName || '';
             if (uid) {
+                let d = (u.department || 'OTHER').toUpperCase().trim();
+                // 統一將 MGR 縮寫直接指向 MANAGER
+                if (d === 'MGR') d = 'MANAGER';
+
                 userStats[uid] = { 
                     id: uid, 
                     name: uname, 
-                    dept: (u.department || 'MGR').toUpperCase(), // 預設改為 MGR
+                    dept: d, 
                     score: 0 
                 };
-                const d = userStats[uid].dept;
                 if (deptHeadcount[d] !== undefined) deptHeadcount[d]++;
                 else {
-                    deptHeadcount['MGR']++;
-                    userStats[uid].dept = 'MGR';
+                    deptHeadcount['OTHER']++;
+                    userStats[uid].dept = 'OTHER';
                 }
                 if (uname) nameToId[uname] = uid;
             }
@@ -103,7 +106,7 @@ export function renderStatistics(data, startDate = null, endDate = null) {
         Object.values(userStats).forEach(u => {
             const d = u.dept;
             if (deptStats[d] !== undefined) deptStats[d] += u.score;
-            else deptStats['MGR'] += u.score;
+            else deptStats['OTHER'] += u.score;
         });
 
         renderLeaderboard(Object.values(userStats));
@@ -177,8 +180,8 @@ function renderDeptChart(deptStats) {
                     'rgba(210, 153, 34, 0.8)',   // OPE (Gold/Orange)
                     'rgba(35, 134, 54, 0.8)',    // MAR (Green)
                     'rgba(248, 81, 73, 0.8)',    // ADM (Red)
-                    'rgba(139, 148, 158, 0.8)',  // MGR (Gray)
-                    'rgba(255, 167, 38, 0.8)'    // MANAGER (Orange)
+                    'rgba(255, 167, 38, 0.8)',   // MANAGER (Orange)
+                    'rgba(139, 148, 158, 0.8)'   // OTHER (Gray/備用)
                 ],
                 borderRadius: 8,
                 borderWidth: 1,
