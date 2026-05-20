@@ -31,9 +31,9 @@ export function renderStatistics(data, startDate = null, endDate = null) {
 
         const userStats = {};
         const nameToId = {}; 
-        // V5.19 Rev.J：將「其他」改為「MGR」
-        const deptStats = { 'PRO': 0, 'SAL': 0, 'OPE': 0, 'MAR': 0, 'ADM': 0, 'MGR': 0 };
-        const deptHeadcount = { 'PRO': 0, 'SAL': 0, 'OPE': 0, 'MAR': 0, 'ADM': 0, 'MGR': 0 };
+        // V5.19 Rev.J：將「其他」改為「MGR」，並新增「MANAGER」
+        const deptStats = { 'PRO': 0, 'SAL': 0, 'OPE': 0, 'MAR': 0, 'ADM': 0, 'MGR': 0, 'MANAGER': 0 };
+        const deptHeadcount = { 'PRO': 0, 'SAL': 0, 'OPE': 0, 'MAR': 0, 'ADM': 0, 'MGR': 0, 'MANAGER': 0 };
         
         // 個人亮點分析用資料 (V5.18)
         const analysisData = {
@@ -177,7 +177,8 @@ function renderDeptChart(deptStats) {
                     'rgba(210, 153, 34, 0.8)',   // OPE (Gold/Orange)
                     'rgba(35, 134, 54, 0.8)',    // MAR (Green)
                     'rgba(248, 81, 73, 0.8)',    // ADM (Red)
-                    'rgba(139, 148, 158, 0.8)'   // MGR (Gray)
+                    'rgba(139, 148, 158, 0.8)',  // MGR (Gray)
+                    'rgba(255, 167, 38, 0.8)'    // MANAGER (Orange)
                 ],
                 borderRadius: 8,
                 borderWidth: 1,
